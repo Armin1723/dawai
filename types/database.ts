@@ -837,6 +837,7 @@ export type Database = {
           store_id: string
           title: string
           type: string
+          updated_at: string
           user_id: string | null
         }
         Insert: {
@@ -849,6 +850,7 @@ export type Database = {
           store_id: string
           title: string
           type: string
+          updated_at?: string
           user_id?: string | null
         }
         Update: {
@@ -861,6 +863,7 @@ export type Database = {
           store_id?: string
           title?: string
           type?: string
+          updated_at?: string
           user_id?: string | null
         }
         Relationships: [
@@ -1932,6 +1935,7 @@ export type Database = {
         Args: { p_processed_by: string; p_store_id: string }
         Returns: Json
       }
+      generate_notifications: { Args: { p_store_id: string }; Returns: number }
       receive_purchase_order: {
         Args: { p_items: Json; p_po_id: string; p_store_id: string }
         Returns: Json

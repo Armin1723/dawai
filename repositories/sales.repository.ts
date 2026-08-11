@@ -104,6 +104,7 @@ export interface SaleItemRow {
   id: string;
   medicine_id: string;
   medicine_name: string | null;
+  sku: string | null;
   quantity: number;
   unit_price: number;
   discount: number;
@@ -135,9 +136,11 @@ export interface SaleReturnRow {
 export interface SaleDetail {
   id: string;
   sale_number: string;
+  invoice_id: string | null;
   invoice_number: string | null;
   customer_id: string | null;
   customer_name: string | null;
+  customer_phone: string | null;
   status: string;
   payment_method: string;
   payment_status: string;
@@ -245,13 +248,16 @@ export async function getSaleDetail(
   }
 
   let customer_name: string | null = null;
+  let customer_phone: string | null = null;
   if (row.customer_id) {
     const { data: c } = await supabase
       .from("customers")
-      .select("name")
+      .select("name, phone")
       .eq("id", row.customer_id)
       .maybeSingle();
-    customer_name = (c as unknown as { name: string } | null)?.name ?? null;
+    const cust = (c as unknown as { name: string | null; phone: string | null } | null) ?? null;
+    customer_name = cust?.name ?? null;
+    customer_phone = cust?.phone ?? null;
   }
 
   const { data: items } = await supabase
@@ -264,10 +270,12 @@ export async function getSaleDetail(
 
   const medIds = [...new Set(itemRows.map((i) => i.medicine_id))];
   const medNames = new Map<string, string>();
+  const medSkus = new Map<string, string>();
   if (medIds.length > 0) {
-    const { data: meds } = await supabase.from("medicines").select("id, name").in("id", medIds);
-    for (const m of (meds ?? []) as unknown as { id: string; name: string }[]) {
+    const { data: meds } = await supabase.from("medicines").select("id, name, sku").in("id", medIds);
+    for (const m of (meds ?? []) as unknown as { id: string; name: string; sku: string | null }[]) {
       medNames.set(m.id, m.name);
+      medSkus.set(m.id, m.sku ?? "");
     }
   }
 
@@ -307,7 +315,12 @@ export async function getSaleDetail(
     ...row,
     invoice_number,
     customer_name,
-    items: itemRows.map((i) => ({ ...i, medicine_name: medNames.get(i.medicine_id) ?? null })),
+    customer_phone,
+    items: itemRows.map((i) => ({
+      ...i,
+      medicine_name: medNames.get(i.medicine_id) ?? null,
+      sku: medSkus.get(i.medicine_id) ?? null,
+    })),
     payments: (payments ?? []) as unknown as SalePaymentRow[],
     returns: returnRows.map((r) => ({
       ...r,

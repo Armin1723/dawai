@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
-import { Bell, LogOut, Menu, Moon, Search, Settings, Sun, Monitor, Command } from "lucide-react";
+import { LogOut, Menu, Moon, Search, Settings, Sun, Monitor, Command } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -23,6 +23,7 @@ import { getRoleLabel } from "@/services/auth.service";
 import { initials } from "@/lib/utils";
 import type { UserRole } from "@/types";
 import { SidebarLogo, SidebarNav, SidebarFooter } from "@/components/layout/app-sidebar";
+import { NotificationsBell } from "@/components/layout/notifications-bell";
 
 interface AppHeaderProps {
   userEmail: string;
@@ -109,16 +110,7 @@ export function AppHeader({ userEmail, userName, userRole }: AppHeaderProps) {
       </DropdownMenu>
 
       {/* Notifications */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="relative"
-        onClick={() => router.push("/notifications")}
-        aria-label="Notifications"
-      >
-        <Bell className="size-4" />
-        <span className="absolute right-2 top-2 size-1.5 rounded-full bg-rose-500 ring-2 ring-background" />
-      </Button>
+      <NotificationsBell />
 
       {/* User menu */}
       <DropdownMenu>

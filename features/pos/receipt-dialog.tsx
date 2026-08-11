@@ -38,6 +38,10 @@ interface ReceiptDialogProps {
   payments?: { method: string; amount: number }[];
   notes?: string | null;
   invoiceContext?: InvoiceContext | null;
+  /** Reprint mode: shows the sale's original date and a Close action. */
+  reprint?: boolean;
+  /** Original sale timestamp (used in reprint mode instead of "now"). */
+  soldAt?: string | null;
   onClose: () => void;
 }
 
@@ -58,12 +62,14 @@ export function ReceiptDialog({
   payments,
   notes,
   invoiceContext,
+  reprint = false,
+  soldAt,
   onClose,
 }: ReceiptDialogProps) {
   const [mode, setMode] = useState<Mode>("thermal");
 
   const ctx = invoiceContext ?? null;
-  const now = new Date();
+  const saleDate = soldAt ? new Date(soldAt) : new Date();
 
   // Per-line GST and a GST-by-rate breakdown (CGST = SGST = half).
   const gstByRate = new Map<number, number>();
@@ -87,11 +93,16 @@ export function ReceiptDialog({
       <DialogContent className={`max-h-[92dvh] overflow-y-auto ${mode === "a4" ? "sm:max-w-3xl" : "sm:max-w-sm"}`}>
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="size-5 text-emerald-500" />
-            <DialogTitle>Sale complete</DialogTitle>
+            {reprint ? (
+              <ReceiptText className="size-5 text-primary" />
+            ) : (
+              <CheckCircle2 className="size-5 text-emerald-500" />
+            )}
+            <DialogTitle>{reprint ? "Invoice" : "Sale complete"}</DialogTitle>
           </div>
           <DialogDescription>
             {sale.invoice_number} · {sale.sale_number}
+            {reprint && soldAt ? ` · ${formatDateTime(soldAt)}` : ""}
           </DialogDescription>
         </DialogHeader>
 
@@ -146,7 +157,7 @@ export function ReceiptDialog({
               </div>
               <div className="flex justify-between">
                 <span>Date</span>
-                <span>{formatDateTime(now)}</span>
+                <span>{formatDateTime(saleDate)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Sale</span>
@@ -306,7 +317,7 @@ export function ReceiptDialog({
                 <p className="text-lg font-bold uppercase tracking-[0.2em]">Tax Invoice</p>
                 <div className="mt-2 ml-auto inline-block space-y-0.5 border border-black/20 p-2 text-left text-[11px]">
                   <p><span className="text-black/50">Invoice No:</span> <span className="font-semibold">{sale.invoice_number}</span></p>
-                  <p><span className="text-black/50">Date:</span> {formatDateTime(now)}</p>
+                  <p><span className="text-black/50">Date:</span> {formatDateTime(saleDate)}</p>
                   <p><span className="text-black/50">Sale No:</span> {sale.sale_number}</p>
                   {ctx?.cashierName && <p><span className="text-black/50">Cashier:</span> {ctx.cashierName}</p>}
                   <p><span className="text-black/50">Payment:</span> <span className="capitalize">{paymentMethod} · {paymentStatus}</span></p>
@@ -460,7 +471,7 @@ export function ReceiptDialog({
         {/* Actions */}
         <div className="no-print flex items-center justify-end gap-2 pt-1">
           <Button variant="outline" onClick={onClose}>
-            New sale
+            {reprint ? "Close" : "New sale"}
           </Button>
           <Button onClick={() => window.print()}>
             <Printer className="size-4" /> Print / Save PDF

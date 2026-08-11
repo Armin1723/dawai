@@ -2,10 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   Banknote,
   ClipboardList,
   Eye,
+  Loader2,
   MoreHorizontal,
   PackageCheck,
   Plus,
@@ -49,6 +51,7 @@ export function PurchasesView({ initialOrders, suppliers, medicines }: Purchases
   const [formOpen, setFormOpen] = useState(false);
   const [detailFor, setDetailFor] = useState<PurchaseOrderRow | null>(null);
   const [receiveFor, setReceiveFor] = useState<PurchaseOrderDetail | null>(null);
+  const [receiveLoadingId, setReceiveLoadingId] = useState<string | null>(null);
   const [paymentFor, setPaymentFor] = useState<{ id: string; po_number: string; due: number } | null>(null);
 
   const { data: orders = initialOrders, isLoading } = useQuery({
@@ -78,6 +81,21 @@ export function PurchasesView({ initialOrders, suppliers, medicines }: Purchases
     queryClient.invalidateQueries({ queryKey: ["purchase-order"] });
     queryClient.invalidateQueries({ queryKey: ["suppliers"] });
   };
+
+  // Fetch the full order and open the receive dialog directly (no detail hop).
+  async function openReceive(row: PurchaseOrderRow) {
+    setReceiveLoadingId(row.id);
+    try {
+      const res = await fetch(`/api/purchases/orders/${row.id}`);
+      if (!res.ok) throw new Error("Could not load the order");
+      const json = (await res.json()) as { data?: PurchaseOrderDetail };
+      if (json.data) setReceiveFor(json.data);
+    } catch {
+      toast.error("Could not load the order");
+    } finally {
+      setReceiveLoadingId(null);
+    }
+  }
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -155,8 +173,16 @@ export function PurchasesView({ initialOrders, suppliers, medicines }: Purchases
               <Eye className="size-4" /> View order
             </DropdownMenuItem>
             {(row.original.status === "ordered" || row.original.status === "partial") && (
-              <DropdownMenuItem onClick={() => setDetailFor(row.original)}>
-                <PackageCheck className="size-4" /> Receive stock
+              <DropdownMenuItem
+                onClick={() => openReceive(row.original)}
+                disabled={receiveLoadingId === row.original.id}
+              >
+                {receiveLoadingId === row.original.id ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <PackageCheck className="size-4" />
+                )}
+                Receive stock
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
@@ -164,8 +190,6 @@ export function PurchasesView({ initialOrders, suppliers, medicines }: Purchases
       ),
     },
   ];
-
-  const receiveTarget = receiveFor ?? (detail && detailFor && detail.id === detailFor.id ? detail : null);
 
   return (
     <div className="space-y-6">
@@ -334,7 +358,13 @@ export function PurchasesView({ initialOrders, suppliers, medicines }: Purchases
                   </Button>
                 )}
                 {(detail.status === "ordered" || detail.status === "partial") && (
-                  <Button className="flex-1" onClick={() => setReceiveFor(detail)}>
+                  <Button
+                    className="flex-1"
+                    onClick={() => {
+                      setReceiveFor(detail);
+                      setDetailFor(null);
+                    }}
+                  >
                     <PackageCheck className="size-4" /> Receive stock
                   </Button>
                 )}
@@ -344,10 +374,11 @@ export function PurchasesView({ initialOrders, suppliers, medicines }: Purchases
         </DialogContent>
       </Dialog>
 
-      {receiveTarget && (
+      {receiveFor && (
         <ReceiveDialog
-          po={receiveTarget}
-          open={Boolean(receiveFor)}
+          key={receiveFor.id}
+          po={receiveFor}
+          open
           onOpenChange={(open) => {
             if (!open) {
               setReceiveFor(null);

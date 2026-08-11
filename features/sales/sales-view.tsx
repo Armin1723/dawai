@@ -2,11 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import Link from "next/link";
 import {
   Eye,
   MoreHorizontal,
   Plus,
+  Printer,
   ReceiptText,
   ShoppingBag,
   Undo2,
@@ -39,26 +41,30 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PaymentMethodChip } from "@/components/shared/payment-method-chip";
 import { ReturnDialog } from "@/features/sales/return-dialog";
+import { ReceiptDialog } from "@/features/pos/receipt-dialog";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import type {
   SaleRow,
   SaleDetail,
 } from "@/repositories/sales.repository";
+import type { InvoiceContext } from "@/repositories/store.repository";
 
 interface SalesViewProps {
   initialSales: SaleRow[];
+  invoiceContext: InvoiceContext | null;
 }
 
 const PAYMENT_STATUSES = ["all", "paid", "partial", "pending", "overdue", "refunded"];
 const SALE_STATUSES = ["all", "completed", "held", "returned", "void"];
 
-export function SalesView({ initialSales }: SalesViewProps) {
+export function SalesView({ initialSales, invoiceContext }: SalesViewProps) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [paymentStatus, setPaymentStatus] = useState("all");
   const [saleStatus, setSaleStatus] = useState("all");
   const [detailFor, setDetailFor] = useState<SaleRow | null>(null);
   const [returnFor, setReturnFor] = useState<SaleDetail | null>(null);
+  const [printFor, setPrintFor] = useState<SaleDetail | null>(null);
 
   const { data: sales = initialSales, isLoading } = useQuery({
     queryKey: ["sales", paymentStatus, saleStatus],
@@ -175,6 +181,19 @@ export function SalesView({ initialSales }: SalesViewProps) {
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => setDetailFor(row.original)}>
               <Eye className="size-4" /> View invoice
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={async () => {
+                const res = await fetch(`/api/sales/${row.original.id}`);
+                if (!res.ok) {
+                  toast.error("Could not load invoice");
+                  return;
+                }
+                const json = (await res.json()) as { data?: SaleDetail };
+                if (json.data) setPrintFor(json.data);
+              }}
+            >
+              <Printer className="size-4" /> Print invoice
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -414,15 +433,19 @@ export function SalesView({ initialSales }: SalesViewProps) {
                 </div>
               )}
 
-              {detail.status === "completed" && (
-                <Button variant="destructive" className="w-full" onClick={() => setReturnFor(detail)}>
-                  <Undo2 className="size-4" /> Return items
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                {detail.status === "completed" && (
+                  <Button variant="destructive" onClick={() => setReturnFor(detail)}>
+                    <Undo2 className="size-4" /> Return items
+                  </Button>
+                )}
+                <Button variant="outline" onClick={() => setPrintFor(detail)}>
+                  <Printer className="size-4" /> Print invoice
                 </Button>
-              )}
-
-              <Button asChild variant="outline" className="w-full">
-                <Link href="/pos">Back to POS</Link>
-              </Button>
+                <Button asChild variant="ghost">
+                  <Link href="/pos">Back to POS</Link>
+                </Button>
+              </div>
             </>
           )}
         </DialogContent>
@@ -430,6 +453,56 @@ export function SalesView({ initialSales }: SalesViewProps) {
 
       {/* Return / refund dialog */}
       <ReturnDialog sale={returnFor} open={Boolean(returnFor)} onOpenChange={(open) => !open && setReturnFor(null)} onReturned={handleReturned} />
+
+      {/* Reprint dialog */}
+      {printFor && <SalePrintDialog sale={printFor} invoiceContext={invoiceContext} onClose={() => setPrintFor(null)} />}
     </div>
+  );
+}
+
+function SalePrintDialog({
+  sale,
+  invoiceContext,
+  onClose,
+}: {
+  sale: SaleDetail;
+  invoiceContext: InvoiceContext | null;
+  onClose: () => void;
+}) {
+  const positivePayments = sale.payments.filter((p) => p.amount > 0);
+  const amountReceived = positivePayments.reduce((sum, p) => sum + p.amount, 0);
+  return (
+    <ReceiptDialog
+      reprint
+      soldAt={sale.sold_at}
+      sale={{
+        sale_id: sale.id,
+        sale_number: sale.sale_number,
+        invoice_id: sale.invoice_id ?? "",
+        invoice_number: sale.invoice_number ?? sale.sale_number,
+        total: sale.total,
+        items: sale.items.length,
+      }}
+      lines={sale.items.map((i) => ({
+        name: i.medicine_name ?? "Medicine",
+        sku: i.sku ?? "",
+        qty: i.quantity,
+        unit_price: i.unit_price,
+        discount: i.discount,
+        gst_rate: i.gst_rate,
+        line_total: i.line_total,
+      }))}
+      paymentMethod={sale.payment_method}
+      amountReceived={amountReceived}
+      discount={sale.discount}
+      subtotal={sale.subtotal}
+      tax={sale.tax_amount}
+      customerName={sale.customer_name}
+      customerPhone={sale.customer_phone}
+      payments={positivePayments.map((p) => ({ method: p.method, amount: p.amount }))}
+      notes={sale.notes}
+      invoiceContext={invoiceContext}
+      onClose={onClose}
+    />
   );
 }
