@@ -1,0 +1,305 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* Elevation — declared once per element (shadow, never shadow + border). */
+  --shadow-card: 0 1px 2px oklch(0.2 0.03 250 / 0.05), 0 8px 24px -12px oklch(0.2 0.03 250 / 0.18);
+  --shadow-lifted: 0 2px 4px oklch(0.2 0.03 250 / 0.06), 0 16px 40px -16px oklch(0.2 0.03 250 / 0.25);
+  --shadow-popover: 0 4px 12px oklch(0.2 0.03 250 / 0.1), 0 24px 48px -12px oklch(0.2 0.03 250 / 0.22);
+  --shadow-zone: inset 0 0 0 1px oklch(1 0 0 / 0.06);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.35);
+  --radius-2xl: calc(var(--radius) * 1.7);
+  --radius-3xl: calc(var(--radius) * 2.1);
+  --radius-4xl: calc(var(--radius) * 2.5);
+
+  --animate-shimmer: shimmer 2s linear infinite;
+  --animate-fade-in: fade-in 0.35s ease-out both;
+  --animate-slide-up: slide-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-scale-in: scale-in 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-live-dot: live-dot 2.2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes live-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+:root {
+  /* Clinical wayfinding — light: cool white ground, ink-blue text, signage teal accent. */
+  --background: oklch(0.984 0.003 240);
+  --foreground: oklch(0.17 0.02 250);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.17 0.02 250);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.17 0.02 250);
+  --primary: oklch(0.47 0.105 195);
+  --primary-foreground: oklch(0.985 0.005 200);
+  --secondary: oklch(0.952 0.006 235);
+  --secondary-foreground: oklch(0.24 0.025 250);
+  --muted: oklch(0.955 0.005 235);
+  --muted-foreground: oklch(0.46 0.015 250);
+  --accent: oklch(0.93 0.025 195);
+  --accent-foreground: oklch(0.32 0.075 195);
+  --destructive: oklch(0.55 0.2 25);
+  --border: oklch(0.905 0.008 240);
+  --input: oklch(0.885 0.009 240);
+  --ring: oklch(0.58 0.12 190);
+  --chart-1: oklch(0.5 0.105 195);
+  --chart-2: oklch(0.62 0.15 165);
+  --chart-3: oklch(0.75 0.16 75);
+  --chart-4: oklch(0.65 0.13 225);
+  --chart-5: oklch(0.6 0.19 25);
+  --radius: 0.875rem;
+  --sidebar: oklch(0.97 0.004 235);
+  --sidebar-foreground: oklch(0.2 0.022 250);
+  --sidebar-primary: oklch(0.47 0.105 195);
+  --sidebar-primary-foreground: oklch(0.985 0.005 200);
+  --sidebar-accent: oklch(0.925 0.028 195);
+  --sidebar-accent-foreground: oklch(0.28 0.075 195);
+  --sidebar-border: oklch(0.905 0.008 240);
+  --sidebar-ring: oklch(0.58 0.12 190);
+}
+
+.dark {
+  /* Clinical wayfinding — dark: deep slate night, bright signage teal. */
+  --background: oklch(0.175 0.013 250);
+  --foreground: oklch(0.96 0.004 240);
+  --card: oklch(0.212 0.015 250);
+  --card-foreground: oklch(0.96 0.004 240);
+  --popover: oklch(0.222 0.015 250);
+  --popover-foreground: oklch(0.96 0.004 240);
+  --primary: oklch(0.74 0.105 190);
+  --primary-foreground: oklch(0.18 0.035 200);
+  --secondary: oklch(0.27 0.014 250);
+  --secondary-foreground: oklch(0.93 0.006 240);
+  --muted: oklch(0.265 0.014 250);
+  --muted-foreground: oklch(0.7 0.01 240);
+  --accent: oklch(0.285 0.04 195);
+  --accent-foreground: oklch(0.87 0.06 190);
+  --destructive: oklch(0.67 0.19 25);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.66 0.1 190);
+  --chart-1: oklch(0.74 0.105 190);
+  --chart-2: oklch(0.74 0.13 165);
+  --chart-3: oklch(0.8 0.14 80);
+  --chart-4: oklch(0.72 0.12 230);
+  --chart-5: oklch(0.72 0.17 25);
+  --sidebar: oklch(0.198 0.014 250);
+  --sidebar-foreground: oklch(0.95 0.005 240);
+  --sidebar-primary: oklch(0.74 0.105 190);
+  --sidebar-primary-foreground: oklch(0.18 0.035 200);
+  --sidebar-accent: oklch(0.29 0.042 195);
+  --sidebar-accent-foreground: oklch(0.87 0.06 190);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.66 0.1 190);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    caret-color: var(--primary);
+  }
+  html {
+    @apply font-sans antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  /* Display type: tight, signage-grade tracking; balanced headings. */
+  h1,
+  h2,
+  h3 {
+    @apply font-heading;
+    text-wrap: balance;
+  }
+  /* Selection, caret and focus are themed surfaces, not browser defaults. */
+  ::selection {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(0.6 0.02 240 / 0.45) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    background-color: oklch(0.6 0.02 240 / 0.45);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: oklch(0.6 0.02 240 / 0.6);
+  }
+  /* Numerals in data stay tabular so columns read as columns. */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* Skeleton shimmer — a moving sheen on muted ground. */
+.data-skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--muted);
+}
+.data-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    oklch(1 0 0 / 0.55),
+    transparent
+  );
+  animation: shimmer 2s linear infinite;
+}
+.dark .data-skeleton::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    oklch(1 0 0 / 0.08),
+    transparent
+  );
+}
+
+/* Print only the POS receipt when printing from the receipt dialog. */
+@media print {
+  @page {
+    margin: 0;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .print-invoice,
+  .print-invoice * {
+    visibility: visible;
+  }
+  /* Anchor the invoice at the top-left without constraining its height, and
+     neutralise the dialog's scroll container so long invoices aren't clipped.
+     The thermal mode keeps its max-w-[80mm]; A4 keeps max-w-[210mm]. */
+  .print-invoice {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: auto;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+  [data-slot="dialog-content"] {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

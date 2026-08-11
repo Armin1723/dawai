@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-09T00:00:00.000Z",
+  "title": "Design System: MediFlow AI",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Signage Teal", "canonical": "oklch(50% 0.105 195)", "tonalRamp": ["oklch(18% 0.06 195)", "oklch(27% 0.075 195)", "oklch(36% 0.09 195)", "oklch(44% 0.1 195)", "oklch(52% 0.105 195)", "oklch(63% 0.1 190)", "oklch(76% 0.09 190)", "oklch(90% 0.04 195)"] },
+      "neutral-bg": { "role": "neutral", "displayName": "Clinical White", "canonical": "oklch(98.4% 0.003 240)", "tonalRamp": ["oklch(15% 0.015 250)", "oklch(30% 0.012 250)", "oklch(45% 0.01 250)", "oklch(60% 0.008 245)", "oklch(72% 0.006 245)", "oklch(82% 0.005 240)", "oklch(91% 0.004 240)", "oklch(98.4% 0.003 240)"] },
+      "neutral-ink": { "role": "neutral", "displayName": "Ink Blue-Black", "canonical": "oklch(17% 0.02 250)", "tonalRamp": ["oklch(14% 0.02 250)", "oklch(24% 0.02 250)", "oklch(34% 0.018 250)", "oklch(46% 0.015 250)", "oklch(58% 0.012 245)", "oklch(70% 0.008 245)", "oklch(83% 0.005 240)", "oklch(95% 0.002 240)"] },
+      "zone-ok": { "role": "zone", "displayName": "Zone Ok — Emerald", "canonical": "oklch(62% 0.15 165)", "tonalRamp": ["oklch(20% 0.08 165)", "oklch(30% 0.1 165)", "oklch(40% 0.12 165)", "oklch(50% 0.135 165)", "oklch(62% 0.15 165)", "oklch(72% 0.14 165)", "oklch(83% 0.1 165)", "oklch(93% 0.05 165)"] },
+      "zone-caution": { "role": "zone", "displayName": "Zone Caution — Amber", "canonical": "oklch(75% 0.16 75)", "tonalRamp": ["oklch(22% 0.08 75)", "oklch(33% 0.11 75)", "oklch(45% 0.14 75)", "oklch(57% 0.16 75)", "oklch(70% 0.16 75)", "oklch(80% 0.15 80)", "oklch(89% 0.11 85)", "oklch(96% 0.05 90)"] },
+      "zone-critical": { "role": "zone", "displayName": "Zone Critical — Rose", "canonical": "oklch(55% 0.2 25)", "tonalRamp": ["oklch(20% 0.1 25)", "oklch(30% 0.13 25)", "oklch(40% 0.16 25)", "oklch(50% 0.19 25)", "oklch(62% 0.18 25)", "oklch(73% 0.15 25)", "oklch(85% 0.09 25)", "oklch(95% 0.03 25)"] }
+    },
+    "shadows": [
+      { "name": "card", "value": "0 1px 2px oklch(20% 0.03 250 / 5%), 0 8px 24px -12px oklch(20% 0.03 250 / 18%)", "purpose": "Rest elevation for table containers and POS panels." },
+      { "name": "lifted", "value": "0 2px 4px oklch(20% 0.03 250 / 6%), 0 16px 40px -16px oklch(20% 0.03 250 / 25%)", "purpose": "Hover elevation for interactive cards and product tiles." },
+      { "name": "popover", "value": "0 4px 12px oklch(20% 0.03 250 / 10%), 0 24px 48px -12px oklch(20% 0.03 250 / 22%)", "purpose": "Dropdowns, dialogs, command palette." }
+    ],
+    "motion": [
+      { "name": "ease-state", "value": "150ms-250ms ease-out", "purpose": "State feedback transitions (hover, focus, press)." },
+      { "name": "kpi-countup", "value": "650ms cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "The single authored moment: KPI numeral count-up." },
+      { "name": "live-dot", "value": "2.2s ease-in-out opacity pulse", "purpose": "Pulsing critical status dots." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single main action per screen: New sale, Checkout, Add medicine.",
+      "html": "<button class=\"ds-btn-primary\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\"/><path d=\"M12 5v14\"/></svg>New sale</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 6px; background: oklch(50% 0.105 195); color: oklch(98.5% 0.005 200); font: 600 14px/1 Geist, system-ui, sans-serif; padding: 8px 16px; border-radius: 12px; border: none; box-shadow: 0 1px 2px oklch(20% 0.03 250 / 30%); cursor: pointer; transition: background 0.2s, box-shadow 0.2s, transform 0.15s; } .ds-btn-primary:hover { background: oklch(45% 0.105 195); box-shadow: 0 2px 6px oklch(20% 0.03 250 / 25%); } .ds-btn-primary:focus-visible { outline: 3px solid oklch(58% 0.12 190 / 50%); outline-offset: 1px; } .ds-btn-primary:active { transform: translateY(1px); }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary actions beside the primary; hover fills muted.",
+      "html": "<button class=\"ds-btn-outline\">View reports</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; background: oklch(100% 0 0); color: oklch(17% 0.02 250); font: 500 14px/1 Geist, system-ui, sans-serif; padding: 8px 16px; border-radius: 12px; border: 1px solid oklch(88.5% 0.009 240); cursor: pointer; transition: background 0.2s, color 0.2s; } .ds-btn-outline:hover { background: oklch(95.5% 0.005 235); } .ds-btn-outline:focus-visible { outline: 3px solid oklch(58% 0.12 190 / 50%); outline-offset: 1px; }"
+    },
+    {
+      "name": "Status Badge — Zone Ok",
+      "kind": "chip",
+      "refersTo": "badge-zone-ok",
+      "description": "Zone chips carry a leading dot and a tinted ring; critical variants pulse the dot.",
+      "html": "<span class=\"ds-chip-ok\"><span class=\"ds-dot\"></span>In stock</span><span class=\"ds-chip-caution\"><span class=\"ds-dot\"></span>Low stock</span><span class=\"ds-chip-critical\"><span class=\"ds-dot\"></span>Expired</span>",
+      "css": ".ds-chip-ok, .ds-chip-caution, .ds-chip-critical { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: 9999px; font: 500 12px/1 Geist, system-ui, sans-serif; } .ds-chip-ok { background: oklch(62% 0.15 165 / 10%); color: oklch(40% 0.12 165); box-shadow: inset 0 0 0 1px oklch(62% 0.15 165 / 20%); } .ds-chip-caution { background: oklch(75% 0.16 75 / 10%); color: oklch(50% 0.16 75); box-shadow: inset 0 0 0 1px oklch(75% 0.16 75 / 25%); } .ds-chip-critical { background: oklch(55% 0.2 25 / 10%); color: oklch(48% 0.19 25); box-shadow: inset 0 0 0 1px oklch(55% 0.2 25 / 20%); } .ds-dot { width: 6px; height: 6px; border-radius: 9999px; background: currentColor; } .ds-chip-critical .ds-dot { animation: ds-pulse 2.2s ease-in-out infinite; } @keyframes ds-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "32px height, 12px radius, teal focus ring, teal caret.",
+      "html": "<div class=\"ds-input-wrap\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input class=\"ds-input\" placeholder=\"Search or scan barcode…\" /></div>",
+      "css": ".ds-input-wrap { position: relative; display: inline-flex; align-items: center; } .ds-input-wrap svg { position: absolute; left: 12px; color: oklch(46% 0.015 250); pointer-events: none; } .ds-input { height: 32px; width: 260px; padding: 0 12px 0 36px; font: 400 14px Geist, system-ui, sans-serif; color: oklch(17% 0.02 250); background: transparent; border: 1px solid oklch(88.5% 0.009 240); border-radius: 12px; transition: border-color 0.2s, box-shadow 0.2s; caret-color: oklch(50% 0.105 195); } .ds-input::placeholder { color: oklch(46% 0.015 250); } .ds-input:focus { outline: none; border-color: oklch(58% 0.12 190); box-shadow: 0 0 0 3px oklch(58% 0.12 190 / 50%); }"
+    },
+    {
+      "name": "Sidebar Nav — Active Item",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "The wayfinding 'you are here' marker: accent pill, teal icon, outer indicator bar.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item ds-active\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"7\" height=\"9\" x=\"3\" y=\"3\" rx=\"1\"/><rect width=\"7\" height=\"5\" x=\"14\" y=\"3\" rx=\"1\"/><rect width=\"7\" height=\"9\" x=\"14\" y=\"12\" rx=\"1\"/><rect width=\"7\" height=\"5\" x=\"3\" y=\"16\" rx=\"1\"/></svg>Inventory</a><a class=\"ds-nav-item\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/></svg>Dashboard</a></nav>",
+      "css": ".ds-nav { display: flex; flex-direction: column; gap: 2px; padding: 4px 12px; } .ds-nav-item { position: relative; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; font: 500 14px Geist, system-ui, sans-serif; color: oklch(46% 0.015 250); text-decoration: none; transition: background 0.15s, color 0.15s; } .ds-nav-item:hover { background: oklch(95.5% 0.005 235); color: oklch(17% 0.02 250); } .ds-nav-item.ds-active { background: oklch(93% 0.025 195); color: oklch(32% 0.075 195); box-shadow: 0 1px 2px oklch(20% 0.03 250 / 8%), inset 0 0 0 1px oklch(50% 0.105 195 / 10%); } .ds-nav-item.ds-active svg { color: oklch(50% 0.105 195); } .ds-nav-item.ds-active::before { content: \"\"; position: absolute; left: -12px; top: 50%; transform: translateY(-50%); width: 4px; height: 20px; border-radius: 9999px; background: oklch(50% 0.105 195); }"
+    },
+    {
+      "name": "KPI Metric Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Oversized tabular numeral, zone-tinted icon tile, delta pill; hover lifts.",
+      "html": "<div class=\"ds-kpi\"><div class=\"ds-kpi-top\"><p class=\"ds-kpi-label\">Today's Sales</p><span class=\"ds-kpi-icon\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"20\" height=\"12\" x=\"2\" y=\"6\" rx=\"2\"/><circle cx=\"12\" cy=\"12\" r=\"2\"/><path d=\"M6 12h.01M18 12h.01\"/></svg></span></div><p class=\"ds-kpi-value\">₹48,250</p><div class=\"ds-kpi-foot\"><span class=\"ds-delta-up\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 17 17 7\"/><path d=\"M7 7h10v10\"/></svg>12.4%</span><span class=\"ds-kpi-hint\">vs yesterday</span></div></div>",
+      "css": ".ds-kpi { background: oklch(100% 0 0); border-radius: 14px; padding: 20px; box-shadow: inset 0 0 0 1px oklch(0% 0 0 / 7%); font-family: Geist, system-ui, sans-serif; display: flex; flex-direction: column; gap: 12px; transition: transform 0.2s, box-shadow 0.2s; } .ds-kpi:hover { transform: translateY(-2px); box-shadow: inset 0 0 0 1px oklch(0% 0 0 / 7%), 0 2px 4px oklch(20% 0.03 250 / 6%), 0 16px 40px -16px oklch(20% 0.03 250 / 25%); } .ds-kpi-top { display: flex; align-items: flex-start; justify-content: space-between; } .ds-kpi-label { margin: 0; font-size: 14px; font-weight: 500; color: oklch(46% 0.015 250); } .ds-kpi-icon { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 12px; background: oklch(50% 0.105 195 / 10%); color: oklch(50% 0.105 195); } .ds-kpi-value { margin: 0; font-size: 30px; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: oklch(17% 0.02 250); } .ds-kpi-foot { display: flex; align-items: center; justify-content: space-between; } .ds-delta-up { display: inline-flex; align-items: center; gap: 2px; padding: 2px 6px; border-radius: 9999px; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; background: oklch(62% 0.15 165 / 10%); color: oklch(40% 0.12 165); } .ds-kpi-hint { font-size: 12px; color: oklch(46% 0.015 250); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Hospital Wayfinding System",
+    "overview": "MediFlow AI looks like the signage of a well-run hospital: every surface is a legible zone, every number is oversized and unambiguous, and the state of the store is readable from across the counter in color alone. It refuses the generic neutral SaaS dashboard in favor of a clinical white / deep slate ground where one signage-teal accent marks the primary action and a green / amber / rose zone language carries meaning. The system is Operate-first: density and speed at the counter, calm trust at the desk. Expression never obscures the task.",
+    "keyCharacteristics": [
+      "Oversized tabular numerals for anything countable.",
+      "One accent (signage teal) for primary actions, selection, and focus — never decoration.",
+      "Color zones (emerald / amber / rose / sky) shared by badges, deltas, and chart fills.",
+      "Hairline rings with soft lifted shadows on hover; elevation declared once per element.",
+      "Browser surfaces themed: selection, scrollbar, caret, focus rings.",
+      "Motion is 150–250ms state feedback; the one authored moment is the KPI count-up."
+    ],
+    "rules": [
+      { "name": "The Zone Rule", "body": "Green, amber, rose, and sky are a shared vocabulary — a stock badge, a KPI delta, and a chart slice that say the same thing use the same hue. Never invent a fifth status color.", "section": "colors" },
+      { "name": "The One Accent Rule", "body": "Signage teal is used on ≤ 10% of any screen: primary actions, the active nav pill, selection, and focus. Its rarity is the point.", "section": "colors" },
+      { "name": "The Size Rule", "body": "Hierarchy is carried by size and weight alone. No kicker, eyebrow, or small-caps label above a heading; no gradient or colored emphasis text.", "section": "typography" },
+      { "name": "The One-Elevation Rule", "body": "A surface declares one elevation language: hairline rings for grid-connected surfaces, shadow-card for free-floating panels; hover lifts interactive tiles with shadow-lifted. The ghost card does not exist here.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use the four zones for anything status-like, reusing the exact hue for the badge, delta, and chart of the same state.",
+      "Do render every countable figure in tabular numerals at the largest sensible size.",
+      "Do declare elevation once per element — ring at rest, lifted shadow on hover.",
+      "Do keep motion at 150–250ms for state feedback; reserve the count-up for KPI figures.",
+      "Do theme the browser's surfaces (selection, scrollbar, caret) from the palette."
+    ],
+    "donts": [
+      "Don't add a kicker/eyebrow above a heading, gradient text, or colored emphasis type — weight and size carry hierarchy.",
+      "Don't use glass or blur as decoration; it is reserved for the sticky header's scroll-under effect.",
+      "Don't scatter decorative sparklines, progress rings, or identical icon-heading-text card rows as page structure.",
+      "Don't invent a fifth status color or reach for brand hues outside the zone set for status.",
+      "Don't replace standard affordances (modals, selects, scrollbars) with custom flavor."
+    ]
+  }
+}
