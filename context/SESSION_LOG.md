@@ -4,6 +4,63 @@
 
 ---
 
+## Session 15 — 2026-08-11 — Bug fixes (receive stock + invoice reprint) + Notifications module
+
+**Goals**
+- Fix two reported bugs: (1) the "Receive stock" action never opened the receive dialog; (2) there was no way to
+  see or print the invoice after leaving POS. Then build the next roadmap task (Notifications).
+
+**Completed Work**
+- **Bug 1 — Receive stock (features/purchases/purchases-view.tsx):** the row dropdown's "Receive stock" item did
+  `setDetailFor(row.original)` — *identical* to "View order" — so it only opened the order detail. New `openReceive`
+  fetches the PO detail and opens `ReceiveDialog` directly (with a spinner + disabled item while loading); the
+  receive dialog is now `key`ed by `po.id` so its `useState` lines remount per PO (stale-lines bug); the in-detail
+  "Receive stock" button closes the detail first (no stacked dialogs).
+- **Bug 2 — Invoice reprint (Sales):** `getSaleDetail` now returns `sku` per item + `customer_phone`;
+  `ReceiptDialog` gained `reprint` + `soldAt` props (title "Invoice", shows the sale's original date, "Close"
+  instead of "New sale"); `sales-view.tsx` adds "Print invoice" (row-dropdown fetch + detail-dialog button) that
+  renders the full thermal/A4 invoice via a `SalePrintDialog` (positive payments only); `/sales` page fetches
+  `getInvoiceContext` for the header/footer.
+- **Notifications module (next roadmap task):**
+  - **Migration `0019_notifications.sql` (pushed live):** `generate_notifications(p_store_id)` RPC scans live data
+    into the existing `notifications` table — low stock (v_inventory_status low/out-of-stock), near expiry + expired
+    batches (≤90d, qty>0), supplier dues (POs with outstanding), pending customer payments (invoices pending/partial).
+    Alerts dedupe by (type, link) while unread and **self-heal**: once the condition clears, the alert auto-marks
+    read (stock replenished, batch sold, PO paid, invoice settled). Added `updated_at` column; added the table to the
+    `supabase_realtime` publication for live updates.
+  - **Migration `0020_fix_notification_transitions.sql` (pushed live, code-review fixes):** a batch crossing
+    near_expiry → expired now retires its sibling `near_expiry` alert for the same batch link; the realtime
+    publication is created if missing (checked via `pg_publication` — `CREATE PUBLICATION IF NOT EXISTS` isn't
+    supported by this PG version).
+  - **Backend:** `repositories/notifications.repository.ts` (list + unread count, mark read one/all, generate),
+    `GET /api/notifications` (list) + `POST /api/notifications` (scan) + `POST /api/notifications/read` (Zod-validated).
+  - **UI:** real `app/(dashboard)/notifications/page.tsx` + `features/notifications/notifications-view.tsx` —
+    summary strip (unread / critical / warnings / categories), filter chips (All / Unread / per type), severity-
+    coded list (tinted type icons, relative time, view links, per-row mark-read, hover actions), "Mark all read",
+    "Scan now". Header bell replaced with `components/layout/notifications-bell.tsx`: live unread-count badge,
+    **realtime subscription** (postgres_changes on notifications via the browser client, cleaned up on unmount),
+    dropdown preview of the latest 4 with inline mark-read + deep links, 60s poll fallback.
+- `types/database.ts` regenerated (includes `generate_notifications`); stale-type `as never` casts removed after
+  regen.
+- **Live E2E (supabase-js): 22/22** — receive flow (create PO → receive 5 units → batch stock restored 0→5);
+  reprint payload (fresh sale → detail with sku + positive payments + invoice_number + total); notifications
+  (generate 17 → rows with valid types/severities, idempotent second run = 0 new, mark-read persists, **realtime
+  insert event received** over the socket with a real user session). Probe rows cleaned up; temp scripts removed.
+- `lint` ✓ · `typecheck` ✓ · `next build` ✓ · migrations 0019 + 0020 pushed ✓
+
+**Issues**
+- Realtime E2E initially failed with the service-role client — realtime needs a real user JWT for RLS; re-ran with
+  an anon client + sign-in and the insert event arrived (proves the publication + RLS path work).
+- `CREATE PUBLICATION IF NOT EXISTS` is a syntax error on this PG — used a `pg_publication` existence check instead.
+- Browser-automation agent still unavailable in this environment; UI fixes verified at the RPC/payload level.
+
+**Next Actions**
+- Dashboard refinements: period picker, drill-downs, realtime.
+- Settings module (business details, GST, invoice, theme, printer, taxes, users/permissions, backups).
+- Employee module (attendance, roles, permissions, activity logs).
+
+---
+
 ## Session 14 — 2026-08-11 — POS invoice polish (80mm thermal + A4 PDF invoice)
 
 **Goals**

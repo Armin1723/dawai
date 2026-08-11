@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
   AlertTriangle,
@@ -13,11 +14,13 @@ import {
   CircleDollarSign,
   Pill,
   Plus,
+  RefreshCw,
   Sparkles,
   TrendingUp,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
+import { getSupabaseClient } from "@/lib/supabase/client";
 import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from "recharts";
 import {
   ChartContainer,
@@ -33,7 +36,12 @@ import { MetricCard, toneChipClass, type MetricTone } from "@/components/shared/
 import { PaymentMethodChip } from "@/components/shared/payment-method-chip";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { cn, formatCurrency } from "@/lib/utils";
-import { emptyDashboard, type DashboardData } from "@/repositories/dashboard.repository";
+import {
+  DASHBOARD_PERIODS,
+  emptyDashboard,
+  type DashboardData,
+  type DashboardPeriod,
+} from "@/repositories/dashboard.repository";
 
 const revenueConfig: ChartConfig = {
   revenue: { label: "Revenue", color: "var(--chart-1)" },
@@ -116,18 +124,59 @@ export function DashboardView({ userName, initialData }: DashboardViewProps) {
   // server and client render at different moments of the day.
   const [greeting] = useState(() => timeGreeting());
   const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [lastSync, setLastSync] = useState<Date | null>(null);
 
-  const { data } = useQuery({
-    queryKey: ["dashboard"],
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
+
+  // Period comes from the URL (?period=) so drill-downs and refresh persist it.
+  const period: DashboardPeriod = DASHBOARD_PERIODS.some((p) => p.id === searchParams.get("period"))
+    ? (searchParams.get("period") as DashboardPeriod)
+    : (initialData?.period ?? "14d");
+
+  const { data, isFetching } = useQuery({
+    queryKey: ["dashboard", period],
     queryFn: async () => {
-      const res = await fetch("/api/dashboard");
+      const res = await fetch(`/api/dashboard?period=${period}`);
       if (!res.ok) throw new Error("Failed to load dashboard");
       const json = (await res.json()) as { data?: DashboardData };
-      return json.data ?? emptyDashboard();
+      setLastSync(new Date());
+      return json.data ?? emptyDashboard(period);
     },
-    initialData: initialData ?? emptyDashboard(),
+    initialData: initialData && initialData.period === period ? initialData : emptyDashboard(period),
     refetchOnWindowFocus: true,
   });
+
+  // Realtime: a checkout, stock receive, or payment in this store refreshes the
+  // panels in place. Tables are in the supabase_realtime publication (migration 0021).
+  useEffect(() => {
+    const channel = getSupabaseClient()
+      .channel("dashboard-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "sales" },
+        () => void queryClient.invalidateQueries({ queryKey: ["dashboard"] })
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "payments" },
+        () => void queryClient.invalidateQueries({ queryKey: ["dashboard"] })
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "medicine_batches" },
+        () => void queryClient.invalidateQueries({ queryKey: ["dashboard"] })
+      )
+      .subscribe();
+    return () => {
+      void getSupabaseClient().removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  // Derived: live when we're not mid-fetch and have synced at least once.
+  const isLive = !isFetching && lastSync !== null;
 
   const { kpis, revenueSeries, categorySales, fastMovers, lowStock, expiring, recentSales, aiMetrics } = data;
 
@@ -187,7 +236,9 @@ export function DashboardView({ userName, initialData }: DashboardViewProps) {
                 <span className="absolute inset-0 animate-live-dot rounded-full bg-emerald-500" />
               </span>
               <span className="flex items-center gap-1 text-xs">
-                <Activity className="size-3 text-emerald-500" /> All systems normal
+                <Activity className={`size-3 ${isLive ? "text-emerald-500" : "text-muted-foreground"}`} />
+                {isLive ? "Live" : lastSync ? "Synced" : "Live"}
+                {lastSync ? ` · ${lastSync.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}
               </span>
             </Badge>
             <Button asChild size="lg">
@@ -196,13 +247,43 @@ export function DashboardView({ userName, initialData }: DashboardViewProps) {
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <Link href="/reports">View reports</Link>
+              <Link href={`/reports?period=${period === "this_month" ? "this_month" : period}`}>View reports</Link>
             </Button>
           </div>
         </div>
       </div>
 
-      {/* KPI row */}
+      {/* Period picker + KPI row */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-1 rounded-xl bg-card p-1 shadow-card ring-1 ring-border">
+          {DASHBOARD_PERIODS.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => {
+                const params = new URLSearchParams(searchParams.toString());
+                if (p.id === "14d") params.delete("period");
+                else params.set("period", p.id);
+                router.push(`${pathname}?${params.toString()}`);
+                router.refresh();
+              }}
+              className={cn(
+                "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+                period === p.id
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              )}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          {isFetching && <RefreshCw className="size-3 animate-spin" />}
+          {isFetching ? "Refreshing…" : "Updated live — new sales, receipts and payments appear instantly"}
+        </p>
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {kpis.length === 0 &&
           KPI_META.map((meta, i) => (
@@ -219,6 +300,13 @@ export function DashboardView({ userName, initialData }: DashboardViewProps) {
             hint={kpi.hint}
             icon={KPI_META[i % KPI_META.length].icon}
             tone={KPI_META[i % KPI_META.length].tone}
+            href={
+              kpi.title === "Pending Payments"
+                ? "/sales?payment_status=pending"
+                : kpi.title === "Today's Sales"
+                  ? "/sales"
+                  : `/reports?period=${period === "this_month" ? "this_month" : period}`
+            }
           />
         ))}
       </div>
@@ -228,8 +316,8 @@ export function DashboardView({ userName, initialData }: DashboardViewProps) {
         <SectionCard
           icon={TrendingUp}
           title="Revenue & profit"
-          description="Last 14 days"
-          action={{ label: "Full report", href: "/reports" }}
+          description={`Daily totals · ${DASHBOARD_PERIODS.find((p) => p.id === period)?.label ?? "14 days"}`}
+          action={{ label: "Full report", href: `/reports?period=${period === "this_month" ? "this_month" : period}` }}
           className="lg:col-span-2"
         >
           {!hasSales ? (
@@ -289,7 +377,7 @@ export function DashboardView({ userName, initialData }: DashboardViewProps) {
         <SectionCard
           icon={Pill}
           title="Sales by category"
-          description="Current period share"
+          description={`Share · ${DASHBOARD_PERIODS.find((p) => p.id === period)?.label ?? "14 days"}`}
           action={{ label: "Inventory", href: "/inventory" }}
         >
           {categorySales.length === 0 ? (
@@ -393,7 +481,7 @@ export function DashboardView({ userName, initialData }: DashboardViewProps) {
         <SectionCard
           icon={Sparkles}
           title="AI business summary"
-          description="Generated from today's numbers"
+          description={`Generated from ${DASHBOARD_PERIODS.find((p) => p.id === period)?.label ?? "14 days"} numbers`}
         >
           {aiLoading ? (
             <div className="space-y-3">
@@ -430,8 +518,8 @@ export function DashboardView({ userName, initialData }: DashboardViewProps) {
         <SectionCard
           icon={TrendingUp}
           title="Fast-moving medicines"
-          description="By units sold this week"
-          action={{ label: "Reports", href: "/reports" }}
+          description={`By units · ${DASHBOARD_PERIODS.find((p) => p.id === period)?.label ?? "14 days"}`}
+          action={{ label: "Reports", href: `/reports?period=${period === "this_month" ? "this_month" : period}` }}
         >
           {fastMovers.length === 0 ? (
             <ListEmpty label="No sales yet — movers will rank here." />

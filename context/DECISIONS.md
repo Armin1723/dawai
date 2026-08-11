@@ -146,6 +146,28 @@ future enhancement. Per-line rounding (migration 0017) keeps `sales.total` == Σ
 
 ---
 
+## ADR-014 — Notifications: generated feed with dedup + self-healing read state
+
+**Date:** 2026-08-11
+**Decision:** The `notifications` table is fed by a `security definer` RPC
+(`generate_notifications`) that scans live data (low stock, near-expiry/expired batches,
+supplier dues, pending customer payments). Alerts are deduped by `(type, link)` while unread,
+and auto-marked read once the underlying condition clears (stock replenished, batch gone, PO
+paid, invoice settled). Realtime delivery uses the standard `supabase_realtime` publication so
+the header bell updates live.
+**Reason:** Notifications that never clear (or duplicate on every scan) are noise. Deriving
+alerts from live data at scan time means there is no separate alerting pipeline to keep in sync,
+and the self-healing update keeps the unread badge honest without manual dismissal.
+**Alternatives:** Trigger-generated rows on every stock/payment write (more moving parts,
+missing conditions require triggers everywhere); a pure client-side computed feed (loses
+read-state persistence); per-user fan-out rows (user_id kept nullable — the feed is store-wide
+for now).
+**Tradeoffs:** The RPC must stay in sync with the source views (`v_inventory_status`), and a scan
+is required before alerts appear (the UI exposes "Scan now"). Alerts are store-wide rather than
+per-user; a future multi-role build can scope by `user_id`.
+
+---
+
 ## ADR-007 — Placeholder routes shipped with the shell
 
 **Date:** 2026-08-04

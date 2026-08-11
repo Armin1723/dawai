@@ -52,16 +52,23 @@ import type { InvoiceContext } from "@/repositories/store.repository";
 interface SalesViewProps {
   initialSales: SaleRow[];
   invoiceContext: InvoiceContext | null;
+  /** Deep-link filters (?payment_status=, ?status=) so dashboards/reports can drill down. */
+  initialPaymentStatus?: string;
+  initialStatus?: string;
 }
 
 const PAYMENT_STATUSES = ["all", "paid", "partial", "pending", "overdue", "refunded"];
 const SALE_STATUSES = ["all", "completed", "held", "returned", "void"];
 
-export function SalesView({ initialSales, invoiceContext }: SalesViewProps) {
+export function SalesView({ initialSales, invoiceContext, initialPaymentStatus, initialStatus }: SalesViewProps) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
-  const [paymentStatus, setPaymentStatus] = useState("all");
-  const [saleStatus, setSaleStatus] = useState("all");
+  const [paymentStatus, setPaymentStatus] = useState(
+    initialPaymentStatus && initialPaymentStatus !== "all" ? initialPaymentStatus : "all"
+  );
+  const [saleStatus, setSaleStatus] = useState(
+    initialStatus && initialStatus !== "all" ? initialStatus : "all"
+  );
   const [detailFor, setDetailFor] = useState<SaleRow | null>(null);
   const [returnFor, setReturnFor] = useState<SaleDetail | null>(null);
   const [printFor, setPrintFor] = useState<SaleDetail | null>(null);

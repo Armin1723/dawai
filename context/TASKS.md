@@ -15,7 +15,7 @@
 - [x] Expense module — CRUD, category chips + CSV, **recurring templates** (migration 0018 `generate_due_expenses` RPC: due → posted instance + next-due advanced; "Post N due" action), feeds Reports expense panel; live E2E 13/13
 - [ ] Employee module — attendance, roles, permissions, performance, activity logs
 - [ ] Reports module — Excel/PDF export, period custom ranges, per-product profit (✅ sales/purchase/inventory/expiry/profit/GST/expense + CSV)
-- [ ] Notifications module — low stock, near expiry, expired, supplier dues, pending payments, realtime
+- [x] Notifications module — low stock, near expiry, expired, supplier dues, pending payments, realtime (migrations 0019/0020 `generate_notifications` RPC: dedup + self-healing read state; realtime header bell + page; live E2E 22/22)
 - [ ] Settings module — business details, GST, invoice, theme, printer, taxes, users/permissions, backups
 - [ ] AI features — dashboard summary, inventory reorder suggestions, sales upsell, chat assistant, report summarization
 - [ ] Tests — Vitest unit/integration, Playwright E2E, CI (lint + typecheck + test)
@@ -37,6 +37,7 @@
 
 ## Completed
 
+- [x] Bug fixes — Receive stock dropdown now opens the receive dialog directly (fetches detail, keyed remount, spinner); Sales can view/print the invoice (thermal + A4 reprint via ReceiptDialog `reprint` mode with real business header from invoice context)
 - [x] Cross-module tie-ins — POS customer picker (credit sales require a customer; customer_id in checkout; survives holds), Reports top-customers panel (spend/orders/outstanding + CSV), Sales customer links, Customers deep links (`?customer=` auto-open profile, "New sale" → /pos?customer=); live E2E: credit sale → dues → reports → payment settle
 - [x] Reports module (Phase 7 Analytics) — period tabs (7d/30d/90d/this month/all), summary KPIs (revenue/profit/margin/avg order/net profit), daily revenue-profit trend chart, category share donut, payment split, top products, recent purchases, expenses by category, inventory health snapshot, CSV exports (sales/products/expenses); `GET /api/reports?period=`; shared day-bucketing helpers extracted to lib/utils
 - [x] Customer module — profiles CRUD, credit limits, outstanding balances, purchase history + payments in a detail dialog, **customer payment recording** (migration 0011 RPC settles oldest open invoices FIFO, flips sale payment_status, decrements balance; live E2E: credit sale → ₹48 due, over-pay 409, FIFO paid/pending, full settle → ₹0)

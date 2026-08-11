@@ -1,6 +1,7 @@
 "use client";
 
 import type { ComponentType } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,6 +34,8 @@ interface MetricCardProps {
   hint?: string;
   loading?: boolean;
   className?: string;
+  /** Optional drill-down target; wraps the card in a link. */
+  href?: string;
 }
 
 export function MetricCard({
@@ -46,6 +49,7 @@ export function MetricCard({
   hint,
   loading,
   className,
+  href,
 }: MetricCardProps) {
   const trend =
     delta === undefined || delta === null ? "flat" : delta > 0 ? "up" : delta < 0 ? "down" : "flat";
@@ -58,15 +62,15 @@ export function MetricCard({
   const trendIcon =
     trend === "up" ? <ArrowUpRight className="size-3.5" /> : trend === "down" ? <ArrowDownRight className="size-3.5" /> : <Minus className="size-3.5" />;
 
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
-      <Card
-        className={cn(
-          "h-full transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-lifted",
-          className
-        )}
-      >
-        <CardContent className="flex h-full flex-col gap-3 p-5">
+  const card = (
+    <Card
+      className={cn(
+        "h-full transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-lifted",
+        href && "group/card focus-within:ring-2 focus-within:ring-primary/40",
+        className
+      )}
+    >
+      <CardContent className="flex h-full flex-col gap-3 p-5">
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
             {Icon && (
@@ -105,6 +109,22 @@ export function MetricCard({
           {hint && <p className="mt-auto text-xs text-muted-foreground">{hint}</p>}
         </CardContent>
       </Card>
+  );
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
+      {href ? (
+        <Link
+          href={href}
+          className="block outline-none"
+          aria-label={`${title} — view details`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {card}
+        </Link>
+      ) : (
+        card
+      )}
     </motion.div>
   );
 }

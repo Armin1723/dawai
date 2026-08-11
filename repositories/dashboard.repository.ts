@@ -5,6 +5,31 @@ import { startOfLocalDay, localDayKey, dayLabel, relativeTime } from "@/lib/util
 export { getCurrentStoreId } from "@/repositories/store.repository";
 
 // ---------------------------------------------------------------------------
+// Period
+// ---------------------------------------------------------------------------
+
+export type DashboardPeriod = "7d" | "14d" | "30d" | "this_month";
+
+export const DASHBOARD_PERIODS: { id: DashboardPeriod; label: string }[] = [
+  { id: "7d", label: "7 days" },
+  { id: "14d", label: "14 days" },
+  { id: "30d", label: "30 days" },
+  { id: "this_month", label: "This month" },
+];
+
+function periodWindow(period: DashboardPeriod): { fromIso: string; days: number } {
+  if (period === "this_month") {
+    const now = new Date();
+    const first = new Date(now.getFullYear(), now.getMonth(), 1);
+    first.setHours(0, 0, 0, 0);
+    const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    return { fromIso: first.toISOString(), days };
+  }
+  const days = { "7d": 7, "14d": 14, "30d": 30 }[period]!;
+  return { fromIso: startOfLocalDay(-(days - 1)).toISOString(), days };
+}
+
+// ---------------------------------------------------------------------------
 // Types (mirror the shapes the dashboard view renders)
 // ---------------------------------------------------------------------------
 
@@ -61,6 +86,7 @@ export interface DashboardRecentSale {
 }
 
 export interface DashboardData {
+  period: DashboardPeriod;
   kpis: DashboardKpi[];
   revenueSeries: DashboardRevenuePoint[];
   categorySales: DashboardCategorySlice[];
@@ -71,8 +97,9 @@ export interface DashboardData {
   aiMetrics: Record<string, unknown>;
 }
 
-export function emptyDashboard(): DashboardData {
+export function emptyDashboard(period: DashboardPeriod = "14d"): DashboardData {
   return {
+    period,
     kpis: [],
     revenueSeries: [],
     categorySales: [],
@@ -101,28 +128,36 @@ interface SaleBaseRow {
 }
 
 /** Compute every dashboard panel for the store from live data. */
-export async function getDashboardData(supabase: Client, storeId: string): Promise<DashboardData> {
-  // -- 14-day sales window (covers today's KPI, 7d KPIs, series, movers, share)
+export async function getDashboardData(
+  supabase: Client,
+  storeId: string,
+  period: DashboardPeriod = "14d"
+): Promise<DashboardData> {
+  const { fromIso, days } = periodWindow(period);
+  const fromKey = localDayKey(fromIso);
+
+  // -- Sales window for the selected period (covers KPIs, series, movers, share)
   const { data: sales } = await supabase
     .from("sales")
     .select("id, invoice_id, customer_id, status, payment_status, payment_method, total, profit, sold_at")
     .eq("store_id", storeId)
-    .gte("sold_at", startOfLocalDay(-13).toISOString())
+    .gte("sold_at", fromIso)
     .order("sold_at", { ascending: false });
 
   const rows = (sales ?? []) as unknown as SaleBaseRow[];
   const completed = rows.filter((r) => r.status === "completed");
 
-  // -- Revenue series: 14 buckets, zero-filled
-  const seriesStart = startOfLocalDay(-13);
+  // -- Revenue series: `days` buckets, zero-filled
+  const seriesStart = new Date(`${fromKey}T00:00:00`);
   const byDay = new Map<string, { revenue: number; profit: number; orders: number }>();
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < days; i++) {
     const d = new Date(seriesStart);
     d.setDate(seriesStart.getDate() + i);
     byDay.set(localDayKey(d.toISOString()), { revenue: 0, profit: 0, orders: 0 });
   }
   for (const s of completed) {
     const key = localDayKey(s.sold_at);
+    if (key < fromKey) continue; // safety: timestamptz vs local-day boundary
     const b = byDay.get(key);
     if (b) {
       b.revenue += s.total;
@@ -150,16 +185,18 @@ export async function getDashboardData(supabase: Client, storeId: string): Promi
   const todayDelta =
     yesterdaySales > 0 ? ((todaySales - yesterdaySales) / yesterdaySales) * 100 : undefined;
 
-  const last7 = completed.filter((s) => localDayKey(s.sold_at) >= localDayKey(startOfLocalDay(-6).toISOString()));
-  const prev7 = completed.filter((s) => {
+  // Period revenue/profit with a delta vs the previous equal-length window.
+  const periodSales = completed.filter((s) => localDayKey(s.sold_at) >= fromKey);
+  const prevStartKey = localDayKey(new Date(new Date(`${fromKey}T00:00:00`).getTime() - days * 86_400_000).toISOString());
+  const prevPeriod = completed.filter((s) => {
     const k = localDayKey(s.sold_at);
-    return k >= localDayKey(startOfLocalDay(-13).toISOString()) && k < localDayKey(startOfLocalDay(-6).toISOString());
+    return k >= prevStartKey && k < fromKey;
   });
-  const weekRevenue = last7.reduce((sum, s) => sum + s.total, 0);
-  const weekProfit = last7.reduce((sum, s) => sum + s.profit, 0);
-  const prevWeekRevenue = prev7.reduce((sum, s) => sum + s.total, 0);
-  const weekDelta =
-    prevWeekRevenue > 0 ? ((weekRevenue - prevWeekRevenue) / prevWeekRevenue) * 100 : undefined;
+  const periodRevenue = periodSales.reduce((sum, s) => sum + s.total, 0);
+  const periodProfit = periodSales.reduce((sum, s) => sum + s.profit, 0);
+  const prevPeriodRevenue = prevPeriod.reduce((sum, s) => sum + s.total, 0);
+  const periodDelta =
+    prevPeriodRevenue > 0 ? ((periodRevenue - prevPeriodRevenue) / prevPeriodRevenue) * 100 : undefined;
 
   // Pending payments: outstanding balance across open invoices in the window.
   const openSales = completed.filter((s) =>
@@ -192,15 +229,15 @@ export async function getDashboardData(supabase: Client, storeId: string): Promi
       hint: todayOrders === 1 ? "1 invoice today" : `${todayOrders} invoices today · vs yesterday`,
     },
     {
-      title: "Revenue (7d)",
-      count: weekRevenue,
-      delta: weekDelta,
-      hint: "vs previous 7 days",
+      title: "Revenue",
+      count: periodRevenue,
+      delta: periodDelta,
+      hint: `This ${period === "this_month" ? "month" : `period (${days}d)`} · vs previous`, 
     },
     {
-      title: "Profit (7d)",
-      count: weekProfit,
-      hint: weekRevenue > 0 ? `${((weekProfit / weekRevenue) * 100).toFixed(1)}% margin` : "Gross margin",
+      title: "Profit",
+      count: periodProfit,
+      hint: periodRevenue > 0 ? `${((periodProfit / periodRevenue) * 100).toFixed(1)}% margin` : "Gross margin",
     },
     {
       title: "Pending Payments",
@@ -384,17 +421,18 @@ export async function getDashboardData(supabase: Client, storeId: string): Promi
   // -- AI summary input
   const aiMetrics = {
     todaySales,
-    weekRevenue,
-    weekProfit,
+    periodRevenue,
+    periodProfit,
     pendingPayments,
     lowStockCount: lowStock.length,
     nearExpiryCount: expiring.filter((e) => e.status === "near expiry").length,
     expiredCount: expiring.filter((e) => e.status === "expired").length,
     bestSeller: fastMovers[0]?.name,
-    salesGrowthPct: weekDelta,
+    salesGrowthPct: periodDelta,
   };
 
   return {
+    period,
     kpis,
     revenueSeries,
     categorySales,

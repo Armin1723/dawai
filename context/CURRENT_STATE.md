@@ -4,12 +4,34 @@ _Updated at the end of every coding session. Resume from here._
 
 ## Current Module
 
-**POS INVOICE POLISH SHIPPED** — checkout now opens a toggleable 80mm thermal receipt / A4 detailed invoice with
-business header (name/GSTIN/DL/address/contact), invoice meta, itemized GST with CGST/SGST, amount-in-words,
-payments + change/balance, notes, and footer (invoice_footer from settings); next: Notifications module
+**NOTIFICATIONS MODULE SHIPPED** — `/notifications` is live (generator RPC scans low stock, expiry, supplier dues
+and pending payments into the existing table with dedup + self-healing read state; realtime header bell with unread
+badge). Also fixed: the "Receive stock" action (now opens the receive dialog directly) and invoice reprinting from
+Sales history (full thermal/A4 invoice via the POS ReceiptDialog in reprint mode). Next: Dashboard refinements
 
 ## Last Completed Feature
 
+- **Notifications module (migrations 0019 + 0020, pushed live):** `generate_notifications(p_store_id)` RPC scans
+  live data into the existing `notifications` table — low stock (v_inventory_status low/out-of-stock), near expiry +
+  expired batches (≤90d with qty>0), supplier dues (POs with outstanding), pending customer payments (invoices
+  pending/partial). Alerts dedupe by (type, link) while unread and self-heal: once the condition clears the alert
+  auto-marks read (stock replenished / batch gone / PO paid / invoice settled). `updated_at` column added; table
+  added to the `supabase_realtime` publication. 0020 (review fixes): near_expiry sibling retired when a batch goes
+  expired; publication created if missing. API: `GET /api/notifications`, `POST /api/notifications` (scan),
+  `POST /api/notifications/read` (one/all). UI: real `/notifications` page (summary strip, filter chips, severity-
+  coded list with view links + mark-read, Mark all read, Scan now) + `NotificationsBell` in the header — live
+  unread badge with a **realtime postgres_changes subscription** (cleanup on unmount, 60s poll fallback) and a
+  dropdown preview of the latest 4 with inline mark-read + deep links. Live E2E 22/22 incl. realtime insert event.
+- **Bug fix — Receive stock (features/purchases/purchases-view.tsx):** the row dropdown's "Receive stock" item
+  used to do `setDetailFor` — identical to "View order" — so it only opened the order detail. Now `openReceive`
+  fetches the PO detail and opens the `ReceiveDialog` directly (spinner + disabled item while loading); the dialog
+  is `key`ed by `po.id` so its lines state remounts per PO (stale-lines bug); the in-detail button closes the
+  detail first so dialogs never stack.
+- **Bug fix — Invoice reprint from Sales:** `getSaleDetail` now returns `sku` per item + `customer_phone`;
+  `features/pos/receipt-dialog.tsx` gained `reprint` + `soldAt` props (title "Invoice", shows the sale's original
+  date, "Close" instead of "New sale"); `sales-view.tsx` adds "Print invoice" in both the row dropdown and the
+  detail dialog, rendering the full 80mm/A4 invoice via `SalePrintDialog` (positive payments only); `/sales`
+  server-fetches `getInvoiceContext` so reprints carry the real business header/footer.
 - **POS invoice polish (PDF + thermal, no schema change):** checkout's `ReceiptDialog` rewritten with two layouts —
   **80mm thermal** (compact, dashed separators, "TAX INVOICE") and **A4 detailed invoice** (professional table with
   # / description+SKU / qty / rate / disc / GST% / amount, Bill-to block, meta box, grand total, amount-in-words,
@@ -150,15 +172,20 @@ payments + change/balance, notes, and footer (invoice_footer from settings); nex
 
 ## Files Modified (this session)
 
-- `features/pos/receipt-dialog.tsx` (rewritten: 80mm thermal + A4 invoice modes), `features/pos/pos-view.tsx`
-- `repositories/store.repository.ts` (getInvoiceContext), `app/(dashboard)/pos/page.tsx`
-- `lib/utils.ts` (amountInWords), `app/globals.css` (print rules)
+- `supabase/migrations/0019_notifications.sql`, `0020_fix_notification_transitions.sql` (pushed live)
+- `repositories/notifications.repository.ts`, `app/api/notifications/route.ts`, `app/api/notifications/read/route.ts`
+- `features/notifications/notifications-view.tsx`, `app/(dashboard)/notifications/page.tsx`
+- `components/layout/notifications-bell.tsx`, `components/layout/app-header.tsx`
+- `features/purchases/purchases-view.tsx` (receive-stock fix)
+- `repositories/sales.repository.ts` (sku + customer_phone), `features/sales/sales-view.tsx` (print invoice),
+  `app/(dashboard)/sales/page.tsx` (invoice context)
+- `features/pos/receipt-dialog.tsx` (reprint + soldAt props), `types/database.ts` (regenerated)
 
 ## Next Task
 
-1. Notifications module (low stock, near expiry, supplier dues, pending payments, realtime).
-2. Dashboard refinements: period picker, drill-downs, realtime.
-3. Settings module (business details, GST, invoice, theme, printer, taxes, users/permissions, backups).
+1. Dashboard refinements: period picker, drill-downs, realtime.
+2. Settings module (business details, GST, invoice, theme, printer, taxes, users/permissions, backups).
+3. Employee module (attendance, roles, permissions, activity logs).
 
 ## Immediate Blockers
 
